@@ -7,10 +7,10 @@
   files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy,
   modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
   Software is furnished to do so, subject to the following conditions:
-   
+
   1. The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
   Software.
-   
+
   2. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
@@ -64,7 +64,7 @@ namespace {
 			HelloWorld\LIST_USER_PERM => array(
 				'title' => t('List Users Permission'),
 			),
-		); 
+		);
 	}
 
 	/**
@@ -72,7 +72,7 @@ namespace {
 	 * Registers the themeable functions of a module with Drupal
 	 *
 	 * @ingroup hooks
-	 */ 
+	 */
 	function helloworld_d7_theme($existing, $type, $theme, $path) {
 		return array(
 			// should be the same name as the function that defines the form
@@ -95,7 +95,7 @@ namespace {
 			'access arguments' => array(HelloWorld\LIST_USER_PERM),
 			'type' => MENU_NORMAL_ITEM,
 		);
-		
+
 		$items[HelloWorld\MODULE_NAME . '/list'] = array(
 			'title' => 'List User Records',
 			'page callback' => 'drupal_get_form',
@@ -106,7 +106,7 @@ namespace {
 			'weight' => -1,
 			'type' => MENU_DEFAULT_LOCAL_TASK,
 		);
-		
+
 		$items[HelloWorld\MODULE_NAME . '/add'] = array(
 			'title' => 'Add User Record',
 			'page callback' => 'drupal_get_form',
@@ -116,27 +116,37 @@ namespace {
 			'access arguments' => array(HelloWorld\ADD_USER_PERM),
 			'type' => MENU_LOCAL_TASK,
 		);
-	  
+
+		$items[HelloWorld\MODULE_NAME . '/import'] = array(
+			'title' => 'Mass Import User Records',
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('\CVWO\HelloWorld\helloworld_import_form', 1),
+			'file' => 'helloworld_d7_import.inc',
+			'access callback' => 'user_access',
+			'access arguments' => array(HelloWorld\ADD_USER_PERM),
+			'type' => MENU_LOCAL_TASK,
+		);
+
 		$items[HelloWorld\MODULE_NAME . '/edit/%'] = array(
 			'title' => 'Edit User Record',
 			'page callback' => 'drupal_get_form',
-			'page arguments' => array('\CVWO\HelloWorld\helloworld_form', 1, 2), 		
+			'page arguments' => array('\CVWO\HelloWorld\helloworld_form', 1, 2),
 			'file' => 'helloworld_d7_form.inc',
 			'access callback' => 'user_access',
 			'access arguments' => array(HelloWorld\EDIT_USER_PERM),
 			'type' => MENU_CALLBACK,
 		);
-	  
+
 		$items[HelloWorld\MODULE_NAME . '/view/%'] = array(
 			'title' => 'View User Record',
 			'page callback' => 'drupal_get_form',
 			'page arguments' => array('\CVWO\HelloWorld\helloworld_form', 1, 2),
-			'file' => 'helloworld_d7_form.inc',		
+			'file' => 'helloworld_d7_form.inc',
 			'access callback' => 'user_access',
 			'access arguments' => array(HelloWorld\VIEW_USER_PERM),
 			'type' => MENU_CALLBACK,
-		);	
-		
+		);
+
 		$items[HelloWorld\MODULE_NAME . '/delete/%'] = array(
 			'page callback' => '\CVWO\HelloWorld\delete',
 			'page arguments' => array(2),
@@ -152,7 +162,7 @@ namespace {
 			'file' => 'helloworld_d7_api.inc',
 			'type' => MENU_CALLBACK,
 		);
-		
+
 		$items['admin/config/cvwo/' . HelloWorld\MODULE_NAME] = array(
 			'title' => 'Helloworld admin settings',
 			'description' => 'Set no. of users displayed in autocomplete/in a single page',
@@ -163,7 +173,7 @@ namespace {
 			'access arguments' => array(HelloWorld\SETTINGS_ADMIN_PERM),
 			'type' => MENU_NORMAL_ITEM,
 		);
-		
+
 		return $items;
 	}
 
@@ -172,15 +182,15 @@ namespace {
 	 */
 	function helloworld_d7_block_info() {
 		$blocks = array();
-		
+
 		$blocks['no_of_users_in_system'] = array(
 			'info' => t('Gives the no. of all the users in the Helloworld D7 module'),
 			'cache' => DRUPAL_NO_CACHE,
 		);
-		
+
 		return $blocks;
 	}
-	 
+
 	/**
 	 * Implements hook_block_view()
 	 */
@@ -188,7 +198,7 @@ namespace {
 		if ($block_name == 'no_of_users_in_system') {
 			$block['subject'] = t('No. of users');
 			$no_of_users = get_no_of_users();
-			
+
 			// based on how many users there currently are, we output something here
 			if ($no_of_users == 0) {
 				$block['content'] = t('There are no user records. Add <a href="@url">some?</a>', array('@url' => url(HelloWorld\MODULE_NAME . '/add')));
