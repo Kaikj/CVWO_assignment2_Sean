@@ -17,7 +17,7 @@ namespace CVWO\HelloWorld {
 		$username = $user->name;
 		$message = $username.' has loading user with helloworld_id: '.$helloworld_id;
 		$txn = db\transaction();
-		
+
 		try {
 			$result = db\select(HELLOWORLD_TABLE, 'h')
 				->fields('h', array('name', 'email', 'comment', 'status'))
@@ -34,19 +34,19 @@ namespace CVWO\HelloWorld {
 		if ($result['status'] == STATUS_DISABLED) {
 			return FALSE;
 		}
-		
+
 		$form_state['values']['name'] = $result['name'];
 		$form_state['values']['email'] = $result['email'];
 		$form_state['values']['comment'] = $result['comment'];
 		return TRUE;
 
 	}
-	 
+
 	/**
 	 * Function adds a user
 	 *
 	 * @param $values
-	 *    Will contain the array of values needed to add a new row inside 
+	 *    Will contain the array of values needed to add a new row inside
 	 * the Helloworld table. I.e. $values['name'], $values['email'], $values['comment']
 	 */
 	function add_user($values) {
@@ -54,7 +54,7 @@ namespace CVWO\HelloWorld {
 		$username = $user->name;
 		$message = $username . ' added a user: ' . $values['name'];
 		$txn = db\transaction();
-		
+
 		try {
 			$id = db\insert(HELLOWORLD_TABLE)
 				->fields(array(
@@ -77,7 +77,7 @@ namespace CVWO\HelloWorld {
 	 * Function updates a current user
 	 *
 	 * @param $form_state
-	 *    Will contain the array of values needed to update a row inside 
+	 *    Will contain the array of values needed to update a row inside
 	 * the Helloworld table I.e. $values['name'], $values['email'], $values['comment']
 	 */
 	function update_user($values) {
@@ -85,7 +85,7 @@ namespace CVWO\HelloWorld {
 		$username = $user->name;
 		$message = $username . ' updated a user: ' . $values['name'];
 		$txn = db\transaction();
-		
+
 		try {
 			$id = db\update(HELLOWORLD_TABLE)
 				->fields(array(
@@ -103,7 +103,7 @@ namespace CVWO\HelloWorld {
 		$txn->commit($message, EDIT_AUDIT, MODULE_NAME);
 		// here we return true instead of id
 		// if 0 rows are altered, if we return id, it will return 0, which will be read as false
-		return TRUE;	
+		return TRUE;
 	}
 
 	/**
@@ -116,7 +116,7 @@ namespace CVWO\HelloWorld {
 		global $user;
 		$username = $user->name;
 		$txn = db\transaction();
-		
+
 		try {
 			// we get the name first for audit log purposes
 			$message = $username . ' deleted a user: ' . get_name($helloworld_id);
@@ -151,7 +151,7 @@ namespace CVWO\HelloWorld {
 			->fetchAssoc();
 		return $result['name'];
 	}
-	 
+
 	/**
 	 * Function that queries database for searched items
 	 *
@@ -164,7 +164,7 @@ namespace CVWO\HelloWorld {
 			array('data' => 'Email', 'field' => 'email'),
 			array('data' => 'Comments', 'field' => 'comment'),
 			array('data' => 'Options'));
-			
+
 		$result = db\select(HELLOWORLD_TABLE, 'h')
 				->extend('PagerDefault')
 				->extend('TableSort')
@@ -174,7 +174,7 @@ namespace CVWO\HelloWorld {
 				->limit(variable_get(PAGELIMIT))
 				->orderByHeader($header)
 				->execute();
-				
+
 		$rows = array();
 		$count = 0;
 		while ($data = $result->fetchAssoc()) {
@@ -201,20 +201,20 @@ namespace CVWO\HelloWorld {
 	 */
 	function get_options($helloworld_id) {
 		$output = '';
-		
+
 		// either edit or view. If have edit already, no need to have view.
 		if (user_access(EDIT_USER_PERM)) {
 			$output .= l('Edit', MODULE_NAME . "/edit/" . $helloworld_id, array('attributes' => array('target' => '_blank'))); // open the page in a new tab
 		} else if (user_access(VIEW_USER_PERM)) {
 			$output .= l('View', MODULE_NAME . "/view/" . $helloworld_id, array('attributes' => array('target' => '_blank'))); // open the page in a new tab
 		}
-		
+
 		if (user_access(DELETE_USER_PERM)) {
 			if ($output != '') {
 				$output .= ' - ';
 			}
-			$output .= l('Delete', MODULE_NAME . "/delete/" . $helloworld_id, 
-						array('attributes' => 
+			$output .= l('Delete', MODULE_NAME . "/delete/" . $helloworld_id,
+						array('attributes' =>
 							array('onclick' => 'return confirm("Are you sure you want to delete this record?")')));
 		}
 		return $output;
@@ -226,7 +226,7 @@ namespace CVWO\HelloWorld {
 	function get_no_of_users() {
 		// note: order is important here; cannot do countQuery() before condition
 		$result = db\select(HELLOWORLD_TABLE, 'h')
-			->condition('status', STATUS_ENABLED, '=')		
+			->condition('status', STATUS_ENABLED, '=')
 			->countQuery()
 			->execute()
 			->fetchField();
@@ -254,8 +254,8 @@ namespace CVWO\HelloWorld {
 	 * Autocomplete function for name
 	 *
 	 * @param str
-	 *    String that is typed into the autocomplete field 
-	 */  
+	 *    String that is typed into the autocomplete field
+	 */
 	function helloworld_name_autocomplete($str = '') {
 		$matches = array();
 
@@ -270,5 +270,39 @@ namespace CVWO\HelloWorld {
 			$matches[$user['name']] = check_plain($user['name']);
 		}
 		drupal_json_output($matches);
+	}
+
+	/**
+	 * Function mass imports many users
+	 *
+	 * @param $values
+	 *    Will contain the array of values needed to add all the new rows inside
+	 * the Helloworld table. I.e. $values['info'], $values['comment']
+	 */
+	function import_user($values) {
+		global $user;
+		$username = $user->name;
+
+		foreach($values['info'] as $index) {
+			$message = $username . ' added a user: ' . $index[0];
+			$txn = db\transaction();
+
+			try {
+				$id = db\insert(HELLOWORLD_TABLE)
+					->fields(array(
+						'name' => $index[0],
+						'email' => $index[1],
+						'comment' => $values['comment'],
+					))
+					->execute();
+			} catch (Exception $e) {
+				$txn->rollback();
+				watchdog_exception('type', $e);
+				return FALSE;
+			}
+
+			$txn->commit($message, ADD_AUDIT ,MODULE_NAME);
+		}
+		return $id;
 	}
 }
